@@ -1,5 +1,4 @@
-# splunk-vpn-log-analysis
-# Splunk VPN Log Analysis – SOC Analyst Mini Project
+# Splunk VPN Log Analysis
 
 ## Overview
 
