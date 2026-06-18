@@ -1,17 +1,22 @@
-# Splunk VPN Log Analysis
+# SOC Threat Monitoring & Incident Response Lab
 
 ## Overview
 
-This project demonstrates hands-on experience with Splunk Enterprise for Security Operations Center (SOC) style log analysis. The objective was to ingest VPN log data, perform SPL (Search Processing Language) queries, investigate events, and extract actionable insights from the dataset.
+This project demonstrates hands-on experience in building and operating a Security Operations Center (SOC) Home Lab using Wazuh SIEM, Suricata IDS, Kali Linux, and Ubuntu Server.
 
-This mini project showcases:
+The objective of this project was to simulate real-world cyber attacks, monitor security events, investigate alerts, perform threat hunting activities, and execute incident response procedures within a controlled lab environment.
 
-* Log ingestion and indexing in Splunk
-* SPL query writing
-* Event filtering and aggregation
-* Basic threat hunting workflow
-* SOC analyst investigation process
-* Dashboard/search workflow understanding
+This project showcases:
+
+* SIEM Deployment and Administration
+* Endpoint Security Monitoring
+* Network Intrusion Detection
+* Threat Detection and Analysis
+* Threat Hunting
+* SSH Brute Force Detection
+* Incident Investigation
+* Incident Response and Containment
+* MITRE ATT&CK Mapping
 
 ---
 
@@ -19,300 +24,416 @@ This mini project showcases:
 
 ## Environment
 
-| Component           | Details                               |
-| ------------------- | ------------------------------------- |
-| Platform            | Splunk Enterprise 8.2.6               |
-| Dataset             | VPNLogs.json                          |
-| Operating System    | Kali Linux (THM AttackBox)            |
-| Use Case            | VPN log investigation and analysis    |
-| Skills Demonstrated | SPL, SIEM Investigation, Log Analysis |
+| Component        | Details             |
+| ---------------- | ------------------- |
+| SIEM Platform    | Wazuh 4.x           |
+| IDS Solution     | Suricata IDS        |
+| Attacker Machine | Kali Linux          |
+| Victim Machine   | Ubuntu Server 26.04 |
+| Monitoring Agent | Wazuh Agent         |
+| Attack Tools     | Hydra, Nmap         |
+| Firewall         | UFW                 |
+| Framework        | MITRE ATT&CK        |
+
+---
+
+# Lab Architecture
+
+```text
+Kali Linux (Attacker)
+        |
+        |
+        v
+Ubuntu Server (Victim)
+├── Wazuh Agent
+└── Suricata IDS
+        |
+        |
+        v
+Wazuh Server
+├── Wazuh Manager
+├── Wazuh Indexer
+└── Wazuh Dashboard
+```
+
+## Screenshot
+
+![Architecture](./screenshots/architecture.png)
 
 ---
 
 # Skills Demonstrated
 
-* Splunk Enterprise Administration Basics
-* Data Upload & Index Creation
-* SPL Query Writing
-* Event Counting
-* Field-based Filtering
-* IP Investigation
-* User Activity Tracking
-* Threat Hunting Basics
-* SOC Workflow Understanding
+## Security Operations Center (SOC)
+
+* Security Monitoring
+* Alert Triage
+* Threat Hunting
+* Incident Investigation
+* Incident Response
+
+## SIEM Engineering
+
+* Wazuh Deployment
+* Agent Management
+* Log Collection
+* Event Correlation
+
+## Network Security
+
+* Intrusion Detection Systems (IDS)
+* Network Monitoring
+* Attack Detection
+
+## Linux Administration
+
+* Service Management
+* Firewall Configuration
+* Log Analysis
+* Security Monitoring
 
 ---
 
-# Step 1 – Launch Splunk Enterprise
+# Step 1 – Deploy Wazuh Server
 
-Opened Splunk Enterprise inside the lab environment and navigated to the Search & Reporting application.
+Installed and configured the Wazuh Server.
 
-## Screenshot
+Components Installed:
 
-![Splunk Home](./screenshots/splunk_home.png)
+* Wazuh Manager
+* Wazuh Indexer
+* Wazuh Dashboard
 
----
-
-# Step 2 – Upload VPN Log Dataset
-
-Uploaded the `VPNLogs.json` file into Splunk using the Add Data workflow.
-
-### Actions Performed
-
-1. Clicked **Add Data**
-2. Selected the VPNLogs.json file
-3. Configured source settings
-4. Prepared dataset for indexing
-
-## Screenshot
-
-![Upload Dataset](./screenshots/upload_dataset.png)
-
----
-
-# Step 3 – Create Custom Index
-
-Created a dedicated Splunk index named:
+## Verification
 
 ```bash
-VPN_Logs
+sudo systemctl status wazuh-manager
+sudo systemctl status wazuh-indexer
+sudo systemctl status wazuh-dashboard
 ```
-
-Using a custom index helps organize security datasets and improves investigation workflow.
 
 ## Screenshot
 
-![Create Index](./screenshots/create_index.png)
+![Wazuh Dashboard](./screenshots/wazuh-dashboard.png)
 
 ---
 
-# Step 4 – Verify Data Ingestion
+# Step 2 – Deploy Wazuh Agent
 
-After indexing the logs, verified that the data was successfully ingested.
+Installed and configured the Wazuh Agent on the Ubuntu victim machine.
 
-## SPL Query
+## Verification
 
-```spl
-index=VPN_Logs
-| stats count
+```bash
+sudo systemctl status wazuh-agent
 ```
 
-## Result
+The agent successfully connected to the Wazuh Server.
+
+## Screenshot
+
+![Agent Connected](./screenshots/agent-connected.png)
+
+---
+
+# Step 3 – Install Suricata IDS
+
+Installed Suricata IDS on the Ubuntu victim machine.
+
+## Installation
+
+```bash
+sudo apt update
+sudo apt install suricata -y
+```
+
+## Verification
+
+```bash
+sudo systemctl status suricata
+```
+
+## Screenshot
+
+![Suricata Running](./screenshots/suricata-running.png)
+
+---
+
+# Step 4 – Integrate Suricata with Wazuh
+
+Configured Wazuh Agent to monitor Suricata Eve JSON logs.
+
+Configuration File:
 
 ```text
-2862 events
+/var/ossec/etc/ossec.conf
+```
+
+Added:
+
+```xml
+<localfile>
+  <log_format>json</log_format>
+  <location>/var/log/suricata/eve.json</location>
+</localfile>
+```
+
+Restarted Agent:
+
+```bash
+sudo systemctl restart wazuh-agent
+```
+
+## Verification
+
+```bash
+sudo tail -20 /var/ossec/logs/ossec.log
+```
+
+Observed:
+
+```text
+Analyzing file:
+/var/log/suricata/eve.json
+```
+
+---
+
+# Step 5 – Generate SSH Brute Force Attack
+
+A brute-force attack was simulated using Hydra from Kali Linux.
+
+## Attack Command
+
+```bash
+hydra -l analyst -P password.txt ssh://192.168.190.132
+```
+
+## Objective
+
+* Generate authentication failures
+* Trigger security alerts
+* Validate monitoring capabilities
+
+## Screenshot
+
+![Hydra Attack](./screenshots/hydra-attack.png)
+
+---
+
+# Step 6 – Verify Authentication Logs
+
+Validated that SSH authentication events were generated on the Ubuntu victim machine.
+
+## Verification
+
+```bash
+sudo tail -20 /var/log/auth.log
+```
+
+Observed:
+
+```text
+Failed password for analyst
+Maximum authentication attempts exceeded
 ```
 
 ## Investigation Insight
 
-This confirms that the VPN dataset was successfully indexed and searchable.
-
-## Screenshot
-
-![Total Events](./screenshots/total_events.png)
+These logs confirmed that the brute-force attack successfully generated security events on the endpoint.
 
 ---
 
-# Step 5 – Investigate Specific User Activity
+# Step 7 – Threat Hunting Investigation
 
-Investigated the number of events generated by the user `Maleena`.
+Investigated authentication alerts using Wazuh Threat Hunting.
 
-## SPL Query
+## Findings
 
-```spl
-index=VPN_Logs UserName="Maleena"
-| stats count
-```
-
-## Result
+### Source IP
 
 ```text
-60 events
+192.168.190.128
 ```
 
-## Investigation Insight
-
-This query filters events associated with a specific user account to measure activity volume.
-
-## Screenshot
-
-![Maleena Events](./screenshots/maleena_events.png)
-
----
-
-# Step 6 – Investigate Source IP Address
-
-Performed IP-based investigation to identify the username associated with a suspicious source IP.
-
-## SPL Query
-
-```spl
-index=VPN_Logs Source_ip="107.14.182.38"
-| table UserName
-```
-
-## Result
+### Target Host
 
 ```text
-Smith
+192.168.190.132
 ```
 
-## Investigation Insight
-
-This type of query is useful during incident response when analysts need to map IP addresses to user identities.
-
-## Screenshot
-
-![IP Investigation](./screenshots/ip_investigation.png)
-
----
-
-# Step 7 – Country-Based Event Analysis
-
-Analyzed VPN events originating from all countries except France.
-
-## SPL Query
-
-```spl
-index=VPN_Logs Source_Country!="France"
-| stats count
-```
-
-## Result
+### Username
 
 ```text
-2814 events
+analyst
 ```
 
-## Investigation Insight
-
-Country filtering is commonly used in SOC environments to identify anomalous login activity or geo-based access patterns.
-
-## Screenshot
-
-![Country Analysis](./screenshots/country_analysis.png)
-
----
-
-# Step 8 – Analyze Events by Source IP
-
-Investigated how many VPN events originated from a specific IP address.
-
-## SPL Query
-
-```spl
-index=VPN_Logs Source_ip="107.3.206.58"
-| table UserName
-```
-
-## Result
+### Event Type
 
 ```text
-User: Will Smith
-Events: 14
+SSH Authentication Failure
 ```
-
-## Investigation Insight
-
-This query helps correlate source IP activity with user sessions and event volume.
 
 ## Screenshot
 
-![IP Event Count](./screenshots/ip_event_count.png)
+![Threat Hunting](./screenshots/threat-hunting.png)
 
 ---
 
-# Step 9 – Final Validation
+# Step 8 – MITRE ATT&CK Mapping
 
-Validated all investigation results inside the lab environment.
+Wazuh successfully mapped the attack to MITRE ATT&CK techniques.
 
-## Verified Results
-
-| Investigation Task         | Result |
-| -------------------------- | ------ |
-| Total Events               | 2862   |
-| Maleena User Events        | 60     |
-| Username for 107.14.182.38 | Smith  |
-| Events Outside France      | 2814   |
-| Events from 107.3.206.58   | 14     |
+| Technique ID | Technique      |
+| ------------ | -------------- |
+| T1110        | Brute Force    |
+| T1078        | Valid Accounts |
 
 ## Screenshot
 
-![Final Validation](./screenshots/final_validation.png)
+![MITRE Mapping](./screenshots/mitre-mapping.png)
 
 ---
 
-# Key SPL Queries Used
+# Step 9 – Incident Response
 
-## Count All Events
+Performed containment actions after identifying the malicious source IP.
 
-```spl
-index=VPN_Logs
-| stats count
+## Block Attacker IP
+
+```bash
+sudo ufw deny from 192.168.190.128
 ```
 
-## Filter by Username
+## Verification
 
-```spl
-index=VPN_Logs UserName="Maleena"
-| stats count
+```bash
+sudo ufw status
 ```
 
-## Find Username by IP
+Result:
 
-```spl
-index=VPN_Logs Source_ip="107.14.182.38"
-| table UserName
+```text
+Anywhere DENY 192.168.190.128
 ```
 
-## Country-Based Filtering
+## Screenshot
 
-```spl
-index=VPN_Logs Source_Country!="France"
-| stats count
+![UFW Block](./screenshots/ufw-block.png)
+
+---
+
+# Project Evidence
+
+## Wazuh Dashboard
+
+![Wazuh Dashboard](./screenshots/wazuh-dashboard.png)
+
+## Agent Connected
+
+![Agent Connected](./screenshots/agent-connected.png)
+
+## Suricata IDS
+
+![Suricata Running](./screenshots/suricata-running.png)
+
+## Hydra Attack
+
+![Hydra Attack](./screenshots/hydra-attack.png)
+
+## Authentication Alert
+
+![Authentication Alert](./screenshots/authentication-alert.png)
+
+## Threat Hunting
+
+![Threat Hunting](./screenshots/threat-hunting.png)
+
+## MITRE ATT&CK Mapping
+
+![MITRE Mapping](./screenshots/mitre-mapping.png)
+
+## Incident Response
+
+![UFW Block](./screenshots/ufw-block.png)
+
+---
+
+# Detection Workflow
+
+```text
+Hydra Attack
+      |
+      v
+Ubuntu SSH Service
+      |
+      v
+Authentication Logs
+      |
+      v
+Wazuh Agent
+      |
+      v
+Wazuh Manager
+      |
+      v
+Wazuh Dashboard
+      |
+      v
+Threat Hunting Investigation
+      |
+      v
+Incident Response
 ```
 
-## Investigate IP Activity
+---
 
-```spl
-index=VPN_Logs Source_ip="107.3.206.58"
-| stats count
-```
+# Key Security Events Observed
+
+* SSH Authentication Failures
+* Successful Authentication Events
+* PAM Authentication Logs
+* SSH Session Activity
+* Threat Hunting Alerts
+* MITRE ATT&CK Correlation
 
 ---
 
 # What I Learned
 
-Through this project, I gained practical exposure to:
+Through this project, I gained practical experience in:
 
-* Splunk search workflow
-* SIEM investigation methodology
-* Writing efficient SPL queries
-* Event correlation techniques
-* User and IP tracking
-* Security log analysis
-* Data ingestion process in Splunk
+* SIEM Deployment and Administration
+* Wazuh Agent Management
+* Suricata IDS Integration
+* Security Monitoring
+* Threat Detection
+* Log Analysis
+* Threat Hunting
+* Incident Investigation
+* Incident Response
+* MITRE ATT&CK Mapping
 
 ---
 
 # Future Improvements
 
-Planned enhancements for this project:
+Planned enhancements:
 
-* Create Splunk dashboards
-* Add geo-location visualization
-* Build alert rules
-* Detect brute-force login attempts
-* Create scheduled reports
-* Integrate threat intelligence feeds
-* Build SOC monitoring use cases
+* Nmap Reconnaissance Detection
+* File Integrity Monitoring (FIM)
+* Active Response Automation
+* Windows Endpoint Integration
+* Email Alerting
+* Custom Detection Rules
+* Multi-Endpoint Monitoring
 
 ---
 
-
-
 # Author
 
-Kumar Batchu
+**Lavanya Kumar Batchu**
 
 B.Tech CSE | Cybersecurity Enthusiast | SOC Analyst Aspirant
+
+GitHub: https://github.com/LavanyaKumar013
